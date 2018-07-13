@@ -1,4 +1,4 @@
-# Thinkful Backend Template
+# Express template
 
 A template for developing and deploying Node.js apps.
 
