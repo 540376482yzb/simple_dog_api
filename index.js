@@ -3,10 +3,14 @@ const cors = require('cors');
 const morgan = require('morgan');
 
 const {PORT, CLIENT_ORIGIN} = require('./config');
-const {dbConnect} = require('./db-mongoose');
-// const {dbConnect} = require('./db-knex');
 
 const app = express();
+
+// body parser middleware
+app.use(express.json())
+
+// Create a static webserver
+app.use(express.static('public'));
 
 app.use(
     morgan(process.env.NODE_ENV === 'production' ? 'common' : 'dev', {
@@ -20,19 +24,32 @@ app.use(
     })
 );
 
+// Catch-all 404
+app.use(function(req, res, next) {
+	const err = new Error('Not Found')
+	err.status = 404
+	next(err)
+})
+
+// Catch-all Error handler
+// Add NODE_ENV check to prevent stacktrace leak
+app.use(function(err, req, res, next) {
+	res.status(err.status || 500)
+	res.json({
+		message: err.message,
+		error: app.get('env') === 'development' ? err : {}
+	})
+})
+
 function runServer(port = PORT) {
-    const server = app
-        .listen(port, () => {
-            console.info(`App listening on port ${server.address().port}`);
-        })
-        .on('error', err => {
-            console.error('Express failed to start');
-            console.error(err);
-        });
+    app.listen(PORT, function () {
+        console.info(`Server listening on ${this.address().port}`);
+      }).on('error', err => {
+        console.error(err)
+      });
 }
 
 if (require.main === module) {
-    dbConnect();
     runServer();
 }
 
